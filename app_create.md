@@ -24,22 +24,34 @@
 
 1. 添加android平台
 
- > cd DailyAccount
- > ionic platform add android
+```
+ cd DailyAccount
+ ionic platform add android
+```
 
  > 提示：如果出现`Error: %s Error: ENOENT: no such file or directory, scandir 'C:\phonegapdev\hooks'`这样的提示，说明你忘记了cd到项目文件夹下再执行platform add命令。
 
 1. 打包成apk
- > ionic build android
 
+```
+ ionic build android
+```
  第一次执行此命令时，会下载必要的文件，如gradle等，时间会很长，而且可能需要fq。
 
 1. 在模拟器中运行
- > ionic emulate android
+
+ ```
+ ionic emulate android
+ ```
 
 1. 真机运行
- > ionic run android
+
+ ```
+ ionic run android
+ ```
 
 1. 浏览器中演示
 
- > ionic serve
+ ```
+ ionic serve
+ ```
