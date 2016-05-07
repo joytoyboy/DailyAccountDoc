@@ -29,6 +29,8 @@
  ionic platform add android
 ```
 
+ ![](./img/createproject3.png)
+
  > 提示：如果出现`Error: %s Error: ENOENT: no such file or directory, scandir 'C:\phonegapdev\hooks'`这样的提示，说明你忘记了cd到项目文件夹下再执行platform add命令。
 
 1. 打包成apk
