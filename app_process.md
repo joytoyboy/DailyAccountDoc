@@ -557,6 +557,67 @@ angular.module('app.loginCtrl', [])
         });
       });
      ```
+
+ 1. 解决后台收不到请求数据的问题
+    虽然现在接口能够调用了，但是测试发现，后台并未收到$scope.loginData中的数据。得需要做一些设置。
+  - 创建utils文件util_http.js
+  ```
+  function httpTransform(httpProvider) {
+      httpProvider.defaults.headers.post['X-Requested-With'] = 'XMLHttpRequest';
+      httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
+
+      /**
+       * 重写angular的param方法，使angular使用jquery一样的数据序列化方式  The workhorse; converts an object to x-www-form-urlencoded serialization.
+       * @param {Object} obj
+       * @return {String}
+       */
+      var param = function (obj) {
+        var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
+
+        for (name in obj) {
+          value = obj[name];
+
+          if (value instanceof Array) {
+            for (i = 0; i < value.length; ++i) {
+              subValue = value[i];
+              fullSubName = name + '[' + i + ']';
+              innerObj = {};
+              innerObj[fullSubName] = subValue;
+              query += param(innerObj) + '&';
+            }
+          }
+          else if (value instanceof Object) {
+            for (subName in value) {
+              subValue = value[subName];
+              fullSubName = name + '[' + subName + ']';
+              innerObj = {};
+              innerObj[fullSubName] = subValue;
+              query += param(innerObj) + '&';
+            }
+          }
+          else if (value !== undefined && value !== null)
+            query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+        }
+
+        return query.length ? query.substr(0, query.length - 1) : query;
+      };
+
+      // Override $http service's default transformRequest
+      httpProvider.defaults.transformRequest = [function (data) {
+        return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+      }];
+    }
+
+  ```
+  - 在index.html中引入此js文件
+
+  - 在app.js中进行配置
+   ```
+    .config(function ($stateProvider, $urlRouterProvider,$httpProvider) {
+        httpTransform($httpProvider);
+    }
+   ```
+
      OK，现在运行`ionic serve`就可以正常请求了，因为现在还没有用户，因此会提示用户不存在，下面实现注册页面，注册页面完成后，就可以创建用户并登录了。
 
 
@@ -640,4 +701,8 @@ angular.module('app.loginCtrl', [])
    ```
    通过对pwd2设置check-pwd-match="pwd", "pwd"为前一个密码input的name。来指定在directive('checkPwdMatch')函数中，通过`var otherInput = element.inheritedData("$formController")[attr.checkPwdMatch];`获取到的input。两者的值进行比较。
 
-   - 待解决问题：先输入pwd2，再输入pwd，并不会进行两者数据的验证，如何在输入pwd时，pwd2也进行验证？
+   - 待解决问题：
+    - 先输入pwd2，再输入pwd，并不会进行两者数据的验证，如何在输入pwd时，pwd2也进行验证？
+    - 如何清空表单？
+      直接将input绑定的model重置即可。如：$scope.regData.name = $scope.regData.pwd = $scope.regData.pwd2 = $scope.regData.nickname = '';
+      （但这样修改后错误验证的提示未消除？）
