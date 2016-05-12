@@ -54,6 +54,8 @@ DailyAccount开发过程中的笔记文档
 ## 创建项目 
 [参见](./app_create.md)
 
+## 上线注意事项
+[参见](./app_notice.md)
 
 ## 几点提示
 [参见](./tips.md)
