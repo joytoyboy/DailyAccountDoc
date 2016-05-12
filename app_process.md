@@ -706,3 +706,101 @@ angular.module('app.loginCtrl', [])
     - 如何清空表单？
       直接将input绑定的model重置即可。如：$scope.regData.name = $scope.regData.pwd = $scope.regData.pwd2 = $scope.regData.nickname = '';
       （但这样修改后错误验证的提示未消除？）
+
+# APP开发实战第三天
+
+## 目标
+ - 首页中的流水Tab页部分。
+
+  由于http请求遇到的坑比较多，未能完成首页的开发。今天完成首页的开发。
+
+## 涉及到的知识点
+ - Tab页的使用。
+ - 列表框的使用。
+
+## 登录页面  
+### 编码  
+ 继续昨天，完成昨天未完成的部分。用户登录后，会回token，我们需要将用户名和token保存起来，每次请求时使用。下次再登录时，将用户名从本地读取出来，显示在登录页。
+ 
+ 1. 保存用户信息
+  我们在已有的AppConfig factory中保存用户，增加userName和token字段：
+  ```
+  return {
+    firstRun: true,
+    userName: '',
+    token: '',
+  };
+
+  ```
+  
+  在LoginCtrl中，引入AppConfig:  
+  ```
+    .controller('LoginCtrl', ['$scope', '$rootScope', '$state','$stateParams','$ionicHistory', '$http', 'AppConfig',
+      'AppConst',
+      function($scope, $rootScope, $state,$stateParams,$ionicHistory,$http,AppConfig, AppConst) {
+
+  ```
+  
+  $scope.login函数中，保存用户信息。
+  ```
+  $http.post($scope.url, $scope.loginData, $scope.config)
+            .success(function (response) {
+              if (response.code != AppConst.CODE_OK){
+                $rootScope.showAlert(response.message);
+              }
+              else{
+                // 将用户名保存起来，下次登录显示。
+                if (response.data.name){
+                  $rootScope.appConfig.userName = response.data.name;
+                  $rootScope.appConfig.token = response.data.token;
+                  AppConfig.saveConfig($rootScope.appConfig);
+                }
+              }
+            })
+  ```
+
+  读取用户信息，设置给页面：
+  
+  ```
+    // 表单数据
+    $scope.loginData = {
+      name: $rootScope.appConfig.userName, // 用户名
+      pwd: ''   // 密码
+    };
+  ```
+  
+  在调用时，会出错：
+  > Cannot read property 'userName' of undefined
+  将读取$rootScope.appConfig的代码从ctrl_splash.js中移到app.js中的AppCtrl中。  
+      
+        ```
+        .controller("AppCtrl", ['$scope', '$rootScope', "AppConfig", '$state', '$ionicNavBarDelegate', '$http','$ionicPopup',
+        function ($scope, $rootScope, AppConfig, $state, $ionicNavBarDelegate, $http,$ionicPopup) {
+        $rootScope.appConfig = AppConfig.getConfig();
+        ...
+        
+        ```
+ 1. 表单重置时，error信息不会重置。
+  在通过将model数据重置，表单中的元素会自动重置，但是表单的error提示不会重置。怎么样才能像页面初次进入时的样子呢？
+  网上也有相同的提问：
+  http://stackoverflow.com/questions/26015010/angularjs-form-reset-error
+  
+    // reset dirty state
+    $scope.loginForm.$setPristine();
+    // reset to clear validation
+    $scope.loginForm.$setValidity();
+    $scope.loginForm.$setUntouched();
+  
+  网上查到，在angular中，表单是FormController的一个实例。表单实例可以随意地使用name属性暴露到scope中。但我却找不到$scope.xxxForm的定义。网上也有同样的疑问：
+  http://stackoverflow.com/questions/22436501/simple-angularjs-form-is-undefined-in-scope
+  从网上没找到比较好的解决方法，我的方法是：在表单提交函数中传入form名：
+  
+  ```
+  $scope.login = function (loginForm){
+    loginForm是有效值，可对其进行操作。
+  ...}
+  
+  ```
+  
+  
+  
