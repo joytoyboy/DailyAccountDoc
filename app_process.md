@@ -1015,3 +1015,4 @@ angular.module('app.loginCtrl', [])
   效果如下：   
   ![](./img/home-flow.png)
   
+ 1. 在标题栏添加“记账”按钮，点击此按钮，可以进入记账页。
