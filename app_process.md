@@ -35,152 +35,146 @@
   1. 在www目录下创建一个page文件夹，用于存放我们的页面。
   1. 在page页中创建一个splash.html文件。
 
-    ```
-    <!--启动页， 不显示标题栏，控制器为SplashCtrl，稍后定义-->
-    <ion-view hide-nav-bar="true" ng-controller="SplashCtrl">
-      <div class="app-splash-logo">
-        <div class="flexbox"><div>
-          <image src="img/splash/logo.png" />
-        </div></div>
-      </div>
-      <div class="app-splash-slogan">
-        <image src="img/splash/slogan.png" />
-      </div>
-    </ion-view>
-    ```
-
-    其样式的实现参见style.css。
+     ```
+     <!--启动页， 不显示标题栏，控制器为SplashCtrl，稍后定义-->
+     <ion-view hide-nav-bar="true" ng-controller="SplashCtrl">
+       <div class="app-splash-logo">
+         <div class="flexbox"><div>
+           <image src="img/splash/logo.png" />
+         </div></div>
+       </div>
+       <div class="app-splash-slogan">
+         <image src="img/splash/slogan.png" />
+       </div>
+     </ion-view>
+     ```
+     其样式的实现参见style.css。
 
   1. 将splash.html文件加到index.html中。
-    
     打开app.js，对.config(function...配置如下：
 
-    ```
-    .config(function ($stateProvider, $urlRouterProvider) {
-    $stateProvider
-      // splash页面
-      .state("splash", {
-        templateUrl: "./page/splash.html"
-      })
-      // wizard页面（稍后定义）
-      .state("wizard", {
-        templateUrl: "./page/wizard.html"
-      })
-      // login页面（稍后定义）
-      .state("login", {
-        templateUrl: "./page/login.html"
-      })
-      ;
-
-  }).controller("AppCtrl", function ($scope, $state, $ionicNavBarDelegate) {
-    // 缺省进入splash页面。
-    $state.go('splash');
-  }
-
-  ```
+     ```
+     .config(function ($stateProvider, $urlRouterProvider) {
+     $stateProvider
+       // splash页面
+       .state("splash", {
+         templateUrl: "./page/splash.html"
+       })
+       // wizard页面（稍后定义）
+       .state("wizard", {
+         templateUrl: "./page/wizard.html"
+       })
+       // login页面（稍后定义）
+       .state("login", {
+         templateUrl: "./page/login.html"
+       })
+       ;
+       }).controller("AppCtrl", function ($scope, $state, $ionicNavBarDelegate) {
+         // 缺省进入splash页面。
+         $state.go('splash');
+       }
+     ```
 
   1. 创建一个factory用于存取app本地数据。
+     在js文件夹下，创建app_config.js文件，内容如下：
 
-    在js文件夹下，创建app_config.js文件，内容如下：  
+     ```
+     angular.module('app.appConfig', [])
+     .factory('AppConfig', function(){
+       return {
+         // 获取App配置数据
+         getConfig: function() {
+           var appConfig = window.localStorage['appConfig'];
+           if(appConfig) {
+             return angular.fromJson(appConfig);
+           }
+           return return {
+             firstRun: true
+           };
+         },
+         // 保存App配置数据
+         saveConfig: function(appConfig) {
+           window.localStorage['appConfig'] = angular.toJson(appConfig);
+         },
+       }
+     });
 
-  ```
-  angular.module('app.appConfig', [])
-  .factory('AppConfig', function(){
-    return {
-      // 获取App配置数据
-      getConfig: function() {
-        var appConfig = window.localStorage['appConfig'];
-        if(appConfig) {
-          return angular.fromJson(appConfig);
-        }
-        return return {
-          firstRun: true
-        };
-      },
-      // 保存App配置数据
-      saveConfig: function(appConfig) {
-        window.localStorage['appConfig'] = angular.toJson(appConfig);
-      },
-    }
-  });
+     ```
 
-  ```   
+     在app.js中，引入此factory：
 
-  在app.js中，引入此factory：
+     ```
+     // angular.module('starter', ['ionic'])
+     // 修改后：
+     angular.module('starter', ['ionic','app.appConfig'])
 
-  ```
-  // angular.module('starter', ['ionic'])
-  // 修改后：
-  angular.module('starter', ['ionic','app.appConfig'])
+     ```
 
-  ```
+     在index.html中，新增：
 
-  在index.html中，新增：
-
-  ```
-  /** 原有 */
-  <script src="js/app.js"></script>
-  /** 新增 */
-  <script src="js/app_config.js"></script>
-
-  ```
+      ```
+      /** 原有 */
+      <script src="js/app.js"></script>
+      /** 新增 */
+      <script src="js/app_config.js"></script>
+      ```
 
   1. 在page中增加一个wizard.html和login.html文件，内容暂写"wizard"和"login"即可。
 
   1. 创建Splash的Controller  
     在js中创建ctrl_splash.js文件，内容如下：
-    ```
-  angular.module('app.splashCtrl', [])
-    .controller('SplashCtrl', ["$scope", "AppConfig", "$timeout", "$state", 
-                      function($scope, AppConfig, $timeout, $state) {
-      $scope.appConfig = AppConfig.getConfig();
 
-      $scope.getFirstRun = function () {
-        if (null == $scope.appConfig){
-          return true;
+      ```
+      angular.module('app.splashCtrl', [])
+        .controller('SplashCtrl', ["$scope", "AppConfig", "$timeout", "$state",
+                          function($scope, AppConfig, $timeout, $state) {
+          $scope.appConfig = AppConfig.getConfig();
+
+          $scope.getFirstRun = function () {
+            if (null == $scope.appConfig){
+              return true;
+            }
+
+            return $scope.appConfig.firstRun;
+          };
+
+          $scope.isFirstRun = $scope.getFirstRun();
+
+          // 将firstRun改为false，保存到本地。
+          $scope.appConfig.firstRun = false;
+          AppConfig.saveConfig($scope.appConfig);
+
+          // 3秒钟后跳转到wizard页
+          $timeout(function(){
+            // 如果第一次运行跳转至wizard页，否则跳转至login页。
+            $state.go($scope.isFirstRun ? 'wizard' : 'login');
+          }, 3000);
         }
+        ])
+      ;
+      ```
 
-        return $scope.appConfig.firstRun;
-      };
+     参照上面引入app_config.js的方法，在app.js和index.html中引入。
 
-      $scope.isFirstRun = $scope.getFirstRun();
+     然后在splash.html中引入：
 
-      // 将firstRun改为false，保存到本地。
-      $scope.appConfig.firstRun = false;
-      AppConfig.saveConfig($scope.appConfig);
+     ```
+     <ion-view hide-nav-bar="true" ng-controller="SplashCtrl">
+     ```
 
-      // 3秒钟后跳转到wizard页
-      $timeout(function(){
-        // 如果第一次运行跳转至wizard页，否则跳转至login页。
-        $state.go($scope.isFirstRun ? 'wizard' : 'login');
-      }, 3000);
-    }
-    ])
-  ;
+     至此，splash页加处理完毕。现在可以运行看一下效果。
+     第一次运行：
+     ![](./img/splash01.gif)
 
-    ```
+     开始的白屏暂且不管，以后进行优化处理。
 
-    参照上面引入app_config.js的方法，在app.js和index.html中引入。
+     再次运行：
+     ![](./img/splash02.gif)
 
-    然后在splash.html中引入：
-    ```
-    <ion-view hide-nav-bar="true" ng-controller="SplashCtrl">
-
-    ```
-
-    至此，splash页加处理完毕。现在可以运行看一下效果。
-    第一次运行：   
-    ![](./img/splash01.gif)
-
-    开始的白屏暂且不管，以后进行优化处理。
-
-    再次运行：   
-    ![](./img/splash02.gif)
-
-    - 待解决问题：
-     1. 出现splash前白屏且有标题栏
-     1. splash与下一页切换不是淡入淡出
-     1. 按下返回键splash会重新出现
+     - 待解决问题：
+      1. 出现splash前白屏且有标题栏
+      1. splash与下一页切换不是淡入淡出
+      1. 按下返回键splash会重新出现
 
      下面先解决按下返回键splash页会重新出现的问题。
 
@@ -237,50 +231,50 @@
 
  1. 修改wizard.html中的代码：
 
- ```
-<ion-view  ng-controller="WizardCtrl" hide-nav-bar="true">
-  <ion-slides options="slideOptions" slider="slideData.slider">
-    <ion-slide-page>
-      <div class="box app-wizardimg">
-        <img src="img/wizard/wizard1.png">
-      </div>
-    </ion-slide-page>
-    <ion-slide-page>
-      <div class="box app-wizardimg">
-        <img src="img/wizard/wizard2.png">
-      </div>
-    </ion-slide-page>
-    <ion-slide-page>
-      <div class="box app-wizardimg">
-        <img src="img/wizard/wizard3.png">
-      </div>
-      <div class="app-centerdiv app-bottom30">
-        <a class="button button-positive app-btnGoHome" ui-sref="login">立即进入</a>
-      </div>
-    </ion-slide-page>
-  </ion-slides>
-</ion-view>
+    ```
+    <ion-view  ng-controller="WizardCtrl" hide-nav-bar="true">
+      <ion-slides options="slideOptions" slider="slideData.slider">
+        <ion-slide-page>
+          <div class="box app-wizardimg">
+            <img src="img/wizard/wizard1.png">
+          </div>
+        </ion-slide-page>
+        <ion-slide-page>
+          <div class="box app-wizardimg">
+            <img src="img/wizard/wizard2.png">
+          </div>
+        </ion-slide-page>
+        <ion-slide-page>
+          <div class="box app-wizardimg">
+            <img src="img/wizard/wizard3.png">
+          </div>
+          <div class="app-centerdiv app-bottom30">
+            <a class="button button-positive app-btnGoHome" ui-sref="login">立即进入</a>
+          </div>
+        </ion-slide-page>
+      </ion-slides>
+    </ion-view>
 
- ```
+     ```
  1. 创建ctrl_wizard.js
 
- ```
-angular.module('app.wizardCtrl', [])
-  .controller('WizardCtrl', ["$scope", "$state", function($scope, $state) {
-    $scope.slideOptions = {
-      loop: false,
-      speed: 500
-    }
+     ```
+    angular.module('app.wizardCtrl', [])
+      .controller('WizardCtrl', ["$scope", "$state", function($scope, $state) {
+        $scope.slideOptions = {
+          loop: false,
+          speed: 500
+        }
 
-    $scope.slideData = {};
-    $scope.$watch('slideData.slider', function(nv, ov) {
-      $scope.slider = $scope.slideData.slider;
-    });
-  }
-  ])
-;
+        $scope.slideData = {};
+        $scope.$watch('slideData.slider', function(nv, ov) {
+          $scope.slider = $scope.slideData.slider;
+        });
+      }
+      ])
+    ;
 
- ``` 
+     ```
 
  将ctrl_wizard.js引入到app.js和index.html中。
 
@@ -308,131 +302,131 @@ angular.module('app.wizardCtrl', [])
 ### 编码
 
  1. 修改login.html页，内容如下：
-  ```
-  <ion-view  ng-controller="LoginCtrl" view-title="登录">
-  <ion-content>
-    <!--novalidate : 不使用h5自带的验证，使用angularjs验证-->
-    <form role="form" name="loginForm" ng-submit="login(loginForm.$valid)" novalidate >
-      <div class="list">
-        <label class="item">
-          <div class="app-centerdiv">
-            <img class="app-login-user" src="img/login/user.png">
+      ```
+      <ion-view  ng-controller="LoginCtrl" view-title="登录">
+      <ion-content>
+        <!--novalidate : 不使用h5自带的验证，使用angularjs验证-->
+        <form role="form" name="loginForm" ng-submit="login(loginForm.$valid)" novalidate >
+          <div class="list">
+            <label class="item">
+              <div class="app-centerdiv">
+                <img class="app-login-user" src="img/login/user.png">
+              </div>
+            </label>
+            <label class="item item-input">
+              <input type="text" placeholder="输入用户名" name="name" required ng-minlength="2" ng-maxlength="20" ng-model="loginData.userName">
+            </label>
+            <div class="error app-form-error"
+                 ng-show="loginForm.name.$dirty && loginForm.name.$invalid">
+              <small class="error" ng-show="loginForm.name.$error.required">
+                请填写名称
+              </small>
+              <small class="error" ng-show="loginForm.name.$error.minlength">
+                名称不能少于2字符
+              </small>
+              <small class="error" ng-show="loginForm.name.$error.maxlength">
+                名称不能超过20字符
+              </small>
+            </div>
+
+            <label class="item item-input">
+              <input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="loginData.pwd">
+            </label>
+            <div class="error app-form-error"
+                 ng-show="loginForm.pwd.$dirty && loginForm.pwd.$invalid">
+              <small class="error" ng-show="loginForm.pwd.$error.required">
+                请输入密码
+              </small>
+              <small class="error" ng-show="loginForm.pwd.$error.minlength">
+                不能少于6字符
+              </small>
+              <small class="error" ng-show="loginForm.pwd.$error.maxlength">
+                不能超过20字符
+              </small>
+              <small class="error" ng-show="loginForm.pwd.$error.checkPwd">
+                密码只能为字母和数组的组合
+              </small>
+            </div>
           </div>
-        </label>
-        <label class="item item-input">
-          <input type="text" placeholder="输入用户名" name="name" required ng-minlength="2" ng-maxlength="20" ng-model="loginData.userName">
-        </label>
-        <div class="error app-form-error"
-             ng-show="loginForm.name.$dirty && loginForm.name.$invalid">
-          <small class="error" ng-show="loginForm.name.$error.required">
-            请填写名称
-          </small>
-          <small class="error" ng-show="loginForm.name.$error.minlength">
-            名称不能少于2字符
-          </small>
-          <small class="error" ng-show="loginForm.name.$error.maxlength">
-            名称不能超过20字符
-          </small>
-        </div>
+          <div class="padding">
+            <!--禁用： ng-disabled="loginForm.$invalid"-->
+            <button type="submit" class="button button-block button-positive" >登录</button>
+          </div>
+        </form>
 
-        <label class="item item-input">
-          <input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="loginData.pwd">
-        </label>
-        <div class="error app-form-error"
-             ng-show="loginForm.pwd.$dirty && loginForm.pwd.$invalid">
-          <small class="error" ng-show="loginForm.pwd.$error.required">
-            请输入密码
-          </small>
-          <small class="error" ng-show="loginForm.pwd.$error.minlength">
-            不能少于6字符
-          </small>
-          <small class="error" ng-show="loginForm.pwd.$error.maxlength">
-            不能超过20字符
-          </small>
-          <small class="error" ng-show="loginForm.pwd.$error.checkPwd">
-            密码只能为字母和数组的组合
-          </small>
-        </div>
-      </div>
-      <div class="padding">
-        <!--禁用： ng-disabled="loginForm.$invalid"-->
-        <button type="submit" class="button button-block button-positive" >登录</button>
-      </div>
-    </form>
-
-  </ion-content>
-  </ion-view>
-  ```
-  其中，
-  - `LoginCtrl`稍后创建。
-  - `login(loginForm.$valid)`为LoginCtrl创建的登录函数。`loginForm.$valid`为name为loginForm的验证属性，当表单数据填写正确时，`$valid`为true。只有当为true时，我们才进行http请求。
-  - `<input type="text" placeholder="输入用户名" name="name" required ng-minlength="2" ng-maxlength="20" ng-model="loginData.userName">`: `required`表示此字段必填，`ng-minlength`和`ng-maxlength`表示字符长度限制，`loginData`为LoginCtrl定义的对象，用来描述http请求时的参数。这里通过`ng-model`将其对象的userName属性绑定到input控件。
-  - `<div class="error app-form-error" ng-show="loginForm.name.$dirty && loginForm.name.$invalid">`...段表示当表单数据不正确时，在input下方显示的提示。
-  - `<input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="loginData.pwd">`中，check-pwd是我们自定义的密码验证处理，对应的错误提示为：`<small class="error" ng-show="loginForm.pwd.$error.checkPwd">`
+      </ion-content>
+      </ion-view>
+      ```
+      其中，
+      - `LoginCtrl`稍后创建。
+      - `login(loginForm.$valid)`为LoginCtrl创建的登录函数。`loginForm.$valid`为name为loginForm的验证属性，当表单数据填写正确时，`$valid`为true。只有当为true时，我们才进行http请求。
+      - `<input type="text" placeholder="输入用户名" name="name" required ng-minlength="2" ng-maxlength="20" ng-model="loginData.userName">`: `required`表示此字段必填，`ng-minlength`和`ng-maxlength`表示字符长度限制，`loginData`为LoginCtrl定义的对象，用来描述http请求时的参数。这里通过`ng-model`将其对象的userName属性绑定到input控件。
+      - `<div class="error app-form-error" ng-show="loginForm.name.$dirty && loginForm.name.$invalid">`...段表示当表单数据不正确时，在input下方显示的提示。
+      - `<input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="loginData.pwd">`中，check-pwd是我们自定义的密码验证处理，对应的错误提示为：`<small class="error" ng-show="loginForm.pwd.$error.checkPwd">`
 
  1. 创建ctrl_login.js文件，内容如下：  
- ```
-angular.module('app.loginCtrl', [])
-  .controller('LoginCtrl', ['$scope', '$state','$stateParams','$ionicHistory','$ionicPopup',
-    function($scope, $state,$stateParams,$ionicHistory,$ionicPopup) {
-      if ($stateParams != null && $stateParams.clearHistory){
-        $ionicHistory.clearHistory();
-      }
+     ```
+    angular.module('app.loginCtrl', [])
+      .controller('LoginCtrl', ['$scope', '$state','$stateParams','$ionicHistory','$ionicPopup',
+        function($scope, $state,$stateParams,$ionicHistory,$ionicPopup) {
+          if ($stateParams != null && $stateParams.clearHistory){
+            $ionicHistory.clearHistory();
+          }
 
-      // 表单数据
-      $scope.loginData = {
-        userName: '', // 用户名
-        pwd: ''       // 密码
-      };
+          // 表单数据
+          $scope.loginData = {
+            userName: '', // 用户名
+            pwd: ''       // 密码
+          };
 
-      // 错误提示框
-      $scope.showAlert = function(msg) {
-        var alertPopup = $ionicPopup.alert({
-          title: '错误',
-          template: msg
-        });
+          // 错误提示框
+          $scope.showAlert = function(msg) {
+            var alertPopup = $ionicPopup.alert({
+              title: '错误',
+              template: msg
+            });
 
-        alertPopup.then(function(res) {
-          // do nothing.
-        });
-      };
+            alertPopup.then(function(res) {
+              // do nothing.
+            });
+          };
 
-      // 登录处理。
-      // 坑：当input验证不通过时，loginData中的相应字段值为null，而不是用户输入的值。
-      $scope.login = function (valid) {
-        console.log($scope.loginData);
-        if (!valid){
-          $scope.showAlert('请输入正确的参数。');
-          return;
+          // 登录处理。
+          // 坑：当input验证不通过时，loginData中的相应字段值为null，而不是用户输入的值。
+          $scope.login = function (valid) {
+            console.log($scope.loginData);
+            if (!valid){
+              $scope.showAlert('请输入正确的参数。');
+              return;
+            }
+          }
         }
-      }
-    }
-  ])
+      ])
 
-  // 自定义密码检测指令。
-  // 坑: 在js中使用驼峰命名，在html中使用-分隔符，如checkPwd在html的input中使用为：check-pwd
-  .directive('checkPwd', [function () {
-    return {
-      require: "ngModel",
-      link: function (scope, element, attr, ngModel) {
-        if (ngModel) {
-          // 只允许字母和数字。
-          var pwdRegex = /^[A-Za-z0-9]+$/i;
-        }
-        var pwdValidator = function (value) {
-          var validity = ngModel.$isEmpty(value) || pwdRegex.test(value);
-          ngModel.$setValidity("checkPwd", validity);
-          return validity ? value : undefined;
+      // 自定义密码检测指令。
+      // 坑: 在js中使用驼峰命名，在html中使用-分隔符，如checkPwd在html的input中使用为：check-pwd
+      .directive('checkPwd', [function () {
+        return {
+          require: "ngModel",
+          link: function (scope, element, attr, ngModel) {
+            if (ngModel) {
+              // 只允许字母和数字。
+              var pwdRegex = /^[A-Za-z0-9]+$/i;
+            }
+            var pwdValidator = function (value) {
+              var validity = ngModel.$isEmpty(value) || pwdRegex.test(value);
+              ngModel.$setValidity("checkPwd", validity);
+              return validity ? value : undefined;
+            };
+            ngModel.$formatters.push(pwdValidator);
+            ngModel.$parsers.push(pwdValidator);
+          }
         };
-        ngModel.$formatters.push(pwdValidator);
-        ngModel.$parsers.push(pwdValidator);
-      }
-    };
-  }])
-;
-```
+      }])
+    ;
+    ```
 
- 将ctrl_login.js引入到app.js和index.html中。
+     将ctrl_login.js引入到app.js和index.html中。
 
 # APP开发实战第二天
 
@@ -488,135 +482,135 @@ angular.module('app.loginCtrl', [])
 
  1. 解决跨域请求的问题  
 
-  参考http://ionichina.com/topic/54f051698cbbaa7a56a49f98  
+    参考http://ionichina.com/topic/54f051698cbbaa7a56a49f98
 
-   1. ionic.project修改：  
+    1. ionic.project修改：
 
-      ```
-      {
+       ```
+        {
         "name": "DailyAccount",
         "app_id": "",
         "proxies": [
-          {
-            "path": "/admin/if/",
-            "proxyUrl": "http://mmb.qsc365.com/admin/if/"
-          }
-        ]
-      }
+              {
+                "path": "/admin/if/",
+                "proxyUrl": "http://mmb.qsc365.com/admin/if/"
+              }
+            ]
+        }
 
-      ```
-     其中，proxies为增加的内容。
+       ```
+       其中，proxies为增加的内容。
 
-   1. 在app.js中，对`angular.module('starter', ['ionic','app.appConfig','app.splashCtrl','app.wizardCtrl','app.loginCtrl'])`增加：  
-     ```
-     angular.module('starter', ['ionic','app.appConfig','app.splashCtrl','app.wizardCtrl','app.loginCtrl'])
-    .constant('ApiEndpoint', {
-      url: 'http://localhost:8100/admin/if/'
-    })
-    ```
-      **提示**：当以`ionic serve`在浏览器中启动时，占用的端口号为8100
+    1. 在app.js中，对`angular.module('starter', ['ionic','app.appConfig','app.splashCtrl','app.wizardCtrl','app.loginCtrl'])`增加：
+       ```
+       angular.module('starter', ['ionic','app.appConfig','app.splashCtrl','app.wizardCtrl','app.loginCtrl'])
+       .constant('ApiEndpoint', {
+       url: 'http://localhost:8100/admin/if/'
+       })
+       ```
+       **提示**：当以`ionic serve`在浏览器中启动时，占用的端口号为8100
        
-   1. 安装replace模块    
+    1. 安装replace模块
 
-     ```
-     npm install --save replace
-     ```
+       ```
+       npm install --save replace
+       ```
 
-   1. 打开gulpfile.js文件
+    1. 打开gulpfile.js文件
 
-   增加： 
+       增加：
 
-     ```
-      // 原来内容：
-      var sh = require('shelljs');
-      // 追加内容：
-      var replace = require('replace');
-      var replaceFiles = ['./www/js/app.js'];
+       ```
+          // 原来内容：
+          var sh = require('shelljs');
+          // 追加内容：
+          var replace = require('replace');
+          var replaceFiles = ['./www/js/app.js'];
 
-      ...
+          ...
 
-      // 文件尾部：
+          // 文件尾部：
 
-      gulp.task('add-proxy', function() {
-        return replace({
-          regex: "http://mmb.qsc365.com/admin/if",
-          replacement: "http://localhost:8100/admin/if",
-          paths: replaceFiles,
-          recursive: false,
-          silent: false,
-        });
-        });
+          gulp.task('add-proxy', function() {
+            return replace({
+              regex: "http://mmb.qsc365.com/admin/if",
+              replacement: "http://localhost:8100/admin/if",
+              paths: replaceFiles,
+              recursive: false,
+              silent: false,
+            });
+            });
 
-        gulp.task('remove-proxy', function() {
-        return replace({
-          regex: "http://localhost:8100/admin/if",
-          replacement: "http://mmb.qsc365.com/admin/if",
-          paths: replaceFiles,
-          recursive: false,
-          silent: false,
-        });
-      });
-     ```
+            gulp.task('remove-proxy', function() {
+            return replace({
+              regex: "http://localhost:8100/admin/if",
+              replacement: "http://mmb.qsc365.com/admin/if",
+              paths: replaceFiles,
+              recursive: false,
+              silent: false,
+            });
+          });
+       ```
 
  1. 解决后台收不到请求数据的问题
     虽然现在接口能够调用了，但是测试发现，后台并未收到$scope.loginData中的数据。得需要做一些设置。
-  - 创建utils文件util_http.js
-  ```
-  function httpTransform(httpProvider) {
-      httpProvider.defaults.headers.post['X-Requested-With'] = 'XMLHttpRequest';
-      httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
+    - 创建utils文件util_http.js
+      ```
+      function httpTransform(httpProvider) {
+          httpProvider.defaults.headers.post['X-Requested-With'] = 'XMLHttpRequest';
+          httpProvider.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded;charset=utf-8';
 
-      /**
-       * 重写angular的param方法，使angular使用jquery一样的数据序列化方式  The workhorse; converts an object to x-www-form-urlencoded serialization.
-       * @param {Object} obj
-       * @return {String}
-       */
-      var param = function (obj) {
-        var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
+          /**
+           * 重写angular的param方法，使angular使用jquery一样的数据序列化方式  The workhorse; converts an object to x-www-form-urlencoded serialization.
+           * @param {Object} obj
+           * @return {String}
+           */
+          var param = function (obj) {
+            var query = '', name, value, fullSubName, subName, subValue, innerObj, i;
 
-        for (name in obj) {
-          value = obj[name];
+            for (name in obj) {
+              value = obj[name];
 
-          if (value instanceof Array) {
-            for (i = 0; i < value.length; ++i) {
-              subValue = value[i];
-              fullSubName = name + '[' + i + ']';
-              innerObj = {};
-              innerObj[fullSubName] = subValue;
-              query += param(innerObj) + '&';
+              if (value instanceof Array) {
+                for (i = 0; i < value.length; ++i) {
+                  subValue = value[i];
+                  fullSubName = name + '[' + i + ']';
+                  innerObj = {};
+                  innerObj[fullSubName] = subValue;
+                  query += param(innerObj) + '&';
+                }
+              }
+              else if (value instanceof Object) {
+                for (subName in value) {
+                  subValue = value[subName];
+                  fullSubName = name + '[' + subName + ']';
+                  innerObj = {};
+                  innerObj[fullSubName] = subValue;
+                  query += param(innerObj) + '&';
+                }
+              }
+              else if (value !== undefined && value !== null)
+                query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
             }
-          }
-          else if (value instanceof Object) {
-            for (subName in value) {
-              subValue = value[subName];
-              fullSubName = name + '[' + subName + ']';
-              innerObj = {};
-              innerObj[fullSubName] = subValue;
-              query += param(innerObj) + '&';
-            }
-          }
-          else if (value !== undefined && value !== null)
-            query += encodeURIComponent(name) + '=' + encodeURIComponent(value) + '&';
+
+            return query.length ? query.substr(0, query.length - 1) : query;
+          };
+
+          // Override $http service's default transformRequest
+          httpProvider.defaults.transformRequest = [function (data) {
+            return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
+          }];
         }
 
-        return query.length ? query.substr(0, query.length - 1) : query;
-      };
+      ```
+    - 在index.html中引入此js文件
 
-      // Override $http service's default transformRequest
-      httpProvider.defaults.transformRequest = [function (data) {
-        return angular.isObject(data) && String(data) !== '[object File]' ? param(data) : data;
-      }];
-    }
-
-  ```
-  - 在index.html中引入此js文件
-
-  - 在app.js中进行配置
-   ```
-    .config(function ($stateProvider, $urlRouterProvider,$httpProvider) {
-        httpTransform($httpProvider);
-    }
-   ```
+    - 在app.js中进行配置
+      ```
+        .config(function ($stateProvider, $urlRouterProvider,$httpProvider) {
+            httpTransform($httpProvider);
+        }
+      ```
 
      OK，现在运行`ionic serve`就可以正常请求了，因为现在还没有用户，因此会提示用户不存在，下面实现注册页面，注册页面完成后，就可以创建用户并登录了。
 
@@ -634,18 +628,18 @@ angular.module('app.loginCtrl', [])
 ### 编码
 
   1. 在page页中创建一个reg.html文件。  
-    内容如下：
+     内容如下：
 
-    ```
-    ```
+     ```
+     ```
 
-  > 因为checkPwd指令可以与login页共用，因此将其从ctrl_login.js移到app.js中。
+     > 因为checkPwd指令可以与login页共用，因此将其从ctrl_login.js移到app.js中。
 
   1. 新问题：如何验证两次密码是否相同。
 
-   - 创新新的指令：
+     - 创新新的指令：
 
-   ```
+     ```
       .directive('checkPwdMatch', [function () {
         return {
           restrict: 'A',
@@ -663,123 +657,122 @@ angular.module('app.loginCtrl', [])
           }
         };
       }])
-   ```
-   html中如下设置：
-   ```
-   <label class="item item-input">
-      <input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="regData.pwd">
-    </label>
-    <div class="error app-form-error"
-         ng-show="regForm.pwd.$dirty && regForm.pwd.$invalid">
-      <small class="error" ng-show="regForm.pwd.$error.required">
-        请输入密码
-      </small>
-      <small class="error" ng-show="regForm.pwd.$error.minlength">
-        不能少于6字符
-      </small>
-      <small class="error" ng-show="regForm.pwd.$error.maxlength">
-        不能超过20字符
-      </small>
-      <small class="error" ng-show="regForm.pwd.$error.checkPwd">
-        密码只能为字母和数组的组合
-      </small>
-    </div>
+     ```
+     html中如下设置：
+     ```
+       <label class="item item-input">
+          <input type="password" placeholder="输入密码" name="pwd" required ng-minlength="6" ng-maxlength="20" check-pwd ng-model="regData.pwd">
+        </label>
+        <div class="error app-form-error"
+             ng-show="regForm.pwd.$dirty && regForm.pwd.$invalid">
+          <small class="error" ng-show="regForm.pwd.$error.required">
+            请输入密码
+          </small>
+          <small class="error" ng-show="regForm.pwd.$error.minlength">
+            不能少于6字符
+          </small>
+          <small class="error" ng-show="regForm.pwd.$error.maxlength">
+            不能超过20字符
+          </small>
+          <small class="error" ng-show="regForm.pwd.$error.checkPwd">
+            密码只能为字母和数组的组合
+          </small>
+        </div>
 
-    <label class="item item-input">
-      <input type="password" placeholder="再输一遍密码" name="pwd2" required check-pwd-match="pwd" ng-model="regData.pwd2">
-    </label>
-    <div class="error app-form-error"
-         ng-show="regForm.pwd2.$dirty && regForm.pwd2.$invalid">
-      <small class="error" ng-show="regForm.pwd2.$error.required">
-        请输入密码
-      </small>
-      <small class="error" ng-show="regForm.pwd2.$error.checkPwdMatch">
-        两次输入的密码不一致
-      </small>
-    </div>
+        <label class="item item-input">
+          <input type="password" placeholder="再输一遍密码" name="pwd2" required check-pwd-match="pwd" ng-model="regData.pwd2">
+        </label>
+        <div class="error app-form-error"
+             ng-show="regForm.pwd2.$dirty && regForm.pwd2.$invalid">
+          <small class="error" ng-show="regForm.pwd2.$error.required">
+            请输入密码
+          </small>
+          <small class="error" ng-show="regForm.pwd2.$error.checkPwdMatch">
+            两次输入的密码不一致
+          </small>
+        </div>
 
-   ```
+     ```
    通过对pwd2设置check-pwd-match="pwd", "pwd"为前一个密码input的name。来指定在directive('checkPwdMatch')函数中，通过`var otherInput = element.inheritedData("$formController")[attr.checkPwdMatch];`获取到的input。两者的值进行比较。
 
    - 待解决问题：
-    - 先输入pwd2，再输入pwd，并不会进行两者数据的验证，如何在输入pwd时，pwd2也进行验证？
-    - 如何清空表单？
+     - 先输入pwd2，再输入pwd，并不会进行两者数据的验证，如何在输入pwd时，pwd2也进行验证？
+     - 如何清空表单？
       直接将input绑定的model重置即可。如：$scope.regData.name = $scope.regData.pwd = $scope.regData.pwd2 = $scope.regData.nickname = '';
       （但这样修改后错误验证的提示未消除？）
 
 # APP开发实战第三天
 
 ## 目标
- - 首页中的流水Tab页部分。
+   - 首页中的流水Tab页部分。
 
   由于http请求遇到的坑比较多，未能完成首页的开发。今天完成首页的开发。
 
 ## 涉及到的知识点
- - Tab页的使用。
- - 列表框的使用。
+   - Tab页的使用。
+   - 列表框的使用。
 
 ## 登录页面  
 ### 编码  
  继续昨天，完成昨天未完成的部分。用户登录后，会回token，我们需要将用户名和token保存起来，每次请求时使用。下次再登录时，将用户名从本地读取出来，显示在登录页。
  
  1. 保存用户信息
-  我们在已有的AppConfig factory中保存用户，增加userName和token字段：
-  ```
-  return {
-    firstRun: true,
-    userName: '',
-    token: '',
-  };
+    我们在已有的AppConfig factory中保存用户，增加userName和token字段：
+    ```
+      return {
+        firstRun: true,
+        userName: '',
+        token: '',
+      };
 
-  ```
+    ```
   
-  在LoginCtrl中，引入AppConfig:  
-  ```
-    .controller('LoginCtrl', ['$scope', '$rootScope', '$state','$stateParams','$ionicHistory', '$http', 'AppConfig',
-      'AppConst',
-      function($scope, $rootScope, $state,$stateParams,$ionicHistory,$http,AppConfig, AppConst) {
+    在LoginCtrl中，引入AppConfig:
+      ```
+      .controller('LoginCtrl', ['$scope', '$rootScope', '$state','$stateParams','$ionicHistory', '$http', 'AppConfig',
+        'AppConst',
+        function($scope, $rootScope, $state,$stateParams,$ionicHistory,$http,AppConfig, AppConst) {
 
-  ```
+      ```
   
-  $scope.login函数中，保存用户信息。
-  ```
-  $http.post($scope.url, $scope.loginData, $scope.config)
-            .success(function (response) {
-              if (response.code != AppConst.CODE_OK){
-                $rootScope.showAlert(response.message);
-              }
-              else{
-                // 将用户名保存起来，下次登录显示。
-                if (response.data.name){
-                  $rootScope.appConfig.userName = response.data.name;
-                  $rootScope.appConfig.token = response.data.token;
-                  AppConfig.saveConfig($rootScope.appConfig);
-                }
-              }
-            })
-  ```
+    $scope.login函数中，保存用户信息。
+      ```
+      $http.post($scope.url, $scope.loginData, $scope.config)
+                .success(function (response) {
+                  if (response.code != AppConst.CODE_OK){
+                    $rootScope.showAlert(response.message);
+                  }
+                  else{
+                    // 将用户名保存起来，下次登录显示。
+                    if (response.data.name){
+                      $rootScope.appConfig.userName = response.data.name;
+                      $rootScope.appConfig.token = response.data.token;
+                      AppConfig.saveConfig($rootScope.appConfig);
+                    }
+                  }
+                })
+      ```
 
-  读取用户信息，设置给页面：
+    读取用户信息，设置给页面：
   
-  ```
-    // 表单数据
-    $scope.loginData = {
-      name: $rootScope.appConfig.userName, // 用户名
-      pwd: ''   // 密码
-    };
-  ```
+      ```
+        // 表单数据
+        $scope.loginData = {
+          name: $rootScope.appConfig.userName, // 用户名
+          pwd: ''   // 密码
+        };
+      ```
   
-  在调用时，会出错：
-  > Cannot read property 'userName' of undefined
-  将读取$rootScope.appConfig的代码从ctrl_splash.js中移到app.js中的AppCtrl中。  
+    在调用时，会出错：
+    > Cannot read property 'userName' of undefined
+    将读取$rootScope.appConfig的代码从ctrl_splash.js中移到app.js中的AppCtrl中。
       
-        ```
-        .controller("AppCtrl", ['$scope', '$rootScope', "AppConfig", '$state', '$ionicNavBarDelegate', '$http','$ionicPopup',
-        function ($scope, $rootScope, AppConfig, $state, $ionicNavBarDelegate, $http,$ionicPopup) {
-        $rootScope.appConfig = AppConfig.getConfig();
-        ...
-        
-        ```
+    ```
+    .controller("AppCtrl", ['$scope', '$rootScope', "AppConfig", '$state', '$ionicNavBarDelegate', '$http','$ionicPopup',
+    function ($scope, $rootScope, AppConfig, $state, $ionicNavBarDelegate, $http,$ionicPopup) {
+    $rootScope.appConfig = AppConfig.getConfig();
+    ...
+    ```
         
  1. 表单重置时，error信息不会重置。
   在通过将model数据重置，表单中的元素会自动重置，但是表单的error提示不会重置。怎么样才能像页面初次进入时的样子呢？
@@ -818,7 +811,7 @@ angular.module('app.loginCtrl', [])
 
 ### 编码
  1. 在page文件夹下创建home.html，代码如下：
-  ```
+    ```
     <ion-tabs ng-controller="HomeCtrl" class="tabs-icon-top tabs-color-active-positive">
     
       <ion-tab title="流水" icon="ion-arrow-swap" href="#/home/flow">
@@ -833,12 +826,12 @@ angular.module('app.loginCtrl', [])
         <ion-nav-view name="home-mine"></ion-nav-view>
       </ion-tab>
     </ion-tabs>
-  ```
+    ```
  1. 在page文件夹下，创建home-flow.html、home-stat.html和home-mine.html，
   内容先分别写入"flow"、"stat"、"mine"即可。
   
  1. 在app.js的config中，加入home页面：
-  ```
+    ```
     .state("home", {
       'url' : '/home',
       templateUrl: "./page/home.html",
@@ -875,59 +868,59 @@ angular.module('app.loginCtrl', [])
       }
     })
 
-  ```
+    ```
  1. 在js文件夹下创建相应的Controller文件：
  
-   ctrl_home.js
+    ctrl_home.js
   
-  ```
+    ```
     angular.module('app.homeCtrl', [])
       .controller('HomeCtrl', ["$scope", '$rootScope', "AppConfig", "$state",
                            function($scope, $rootScope, AppConfig, $state) {
       }
       ])
     ;
-  ```
+    ```
  
-   ctrl_home_flow.js
+    ctrl_home_flow.js
   
-  ```
+    ```
     angular.module('app.homeFlowCtrl', [])
       .controller('HomeFlowCtrl', ["$scope", '$rootScope', "AppConfig", "$state",
                            function($scope, $rootScope, AppConfig, $state) {
       }
       ])
     ;
-  ```
+    ```
  
-   ctrl_home_stat.js
+    ctrl_home_stat.js
   
-  ```
+    ```
     angular.module('app.homeStatCtrl', [])
       .controller('HomeStatCtrl', ["$scope", '$rootScope', "AppConfig", "$state",
                            function($scope, $rootScope, AppConfig, $state) {
       }
       ])
     ;
-  ```
+    ```
  
-   ctrl_home_mine.js
+    ctrl_home_mine.js
   
-  ```
+    ```
     angular.module('app.homeMineCtrl', [])
       .controller('HomeMineCtrl', ["$scope", '$rootScope', "AppConfig", "$state",
                            function($scope, $rootScope, AppConfig, $state) {
       }
       ])
     ;
-  ```
+    ```
   
  1. 在app.js和index.html中引入这些js文件。
 
  1. 新建fact_flow.js文件，创建FlowFactory:
   
-   ```
-   angular.module('app.flow', [])
+    ```
+    angular.module('app.flow', [])
     .factory('FlowFact', function(){
       return {
         // 从服务器获取流水项。
@@ -967,52 +960,53 @@ angular.module('app.loginCtrl', [])
         },
       }
     })
-   ;
+    ;
 
-   ```
-   这里先写死，以方便看效果，之后实现从http获取数据。
+    ```
+    这里先写死，以方便看效果，之后实现从http获取数据。
   
  1. 在app.js和index.html中引入此js文件。
 
  1. 修改home-flow.html
   
-  ```
-  <ion-view view-title="流水">
-    <ion-content class="padding">
-      <ion-list >
-        <ion-item ng-repeat="item in flowItems"
-                  class="item-avatar-left">
-          <img ng-src="{{item.img}}" class="app-clear-radius">
-          <h2>{{item.title}}</h2>
-          <div>
-            <span class="app-left app-tag">
-              {{item.moneyType}}
-            </span>
-            <span class="app-item-price">{{item.price}}</span>
-            <span class="app-right app-tag {{flowItemTypeMap[item.type].style}}">{{item.type}}</span>
-          </div>
-          <ion-option-button class="button-positive"
-                             ng-click="share(item)">
-            Share
-          </ion-option-button>
-          <ion-option-button class="button-info"
-                             ng-click="edit(item)">
-            Edit
-          </ion-option-button>
-          <ion-delete-button class="ion-minus-circled"
-                             ng-click="flowItems.splice($index, 1)">
-          </ion-delete-button>
-          <ion-reorder-button class="ion-navicon"
-                              on-reorder="reorderItem(item, $fromIndex, $toIndex)">
-          </ion-reorder-button>
-  
-        </ion-item>
-      </ion-list>  </ion-content>
-  </ion-view>
+    ```
+    <ion-view view-title="流水">
+        <ion-content class="padding">
+          <ion-list >
+            <ion-item ng-repeat="item in flowItems"
+                      class="item-avatar-left">
+              <img ng-src="{{item.img}}" class="app-clear-radius">
+              <h2>{{item.title}}</h2>
+              <div>
+                <span class="app-left app-tag">
+                  {{item.moneyType}}
+                </span>
+                <span class="app-item-price">{{item.price}}</span>
+                <span class="app-right app-tag {{flowItemTypeMap[item.type].style}}">{{item.type}}</span>
+              </div>
+              <ion-option-button class="button-positive"
+                                 ng-click="share(item)">
+                Share
+              </ion-option-button>
+              <ion-option-button class="button-info"
+                                 ng-click="edit(item)">
+                Edit
+              </ion-option-button>
+              <ion-delete-button class="ion-minus-circled"
+                                 ng-click="flowItems.splice($index, 1)">
+              </ion-delete-button>
+              <ion-reorder-button class="ion-navicon"
+                                  on-reorder="reorderItem(item, $fromIndex, $toIndex)">
+              </ion-reorder-button>
 
-  ```
+            </ion-item>
+          </ion-list>
+        </ion-content>
+    </ion-view>
+
+    ```
   
-  效果如下：   
-  ![](./img/home-flow.png)
+    效果如下：
+    ![](./img/home-flow.png)
   
  1. 在标题栏添加“记账”按钮，点击此按钮，可以进入记账页。
