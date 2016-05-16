@@ -220,35 +220,89 @@
  无。
 
 - **返回结果**
-用户排序返回此用户的所有用途列表。
+用户排序返回此用户的所有用途列表，以type字段分组，每个type中按sort字段排序。
 
 ``` json
-{
-    "list": [
-        {"id": 1,
-        "name": "衣",
-        "type": "支出",
+  "list": [
+    {
+      "type_id": "1",
+      "list": [
+        {
+          "id": "3",
+          "name": "衣",
+          "type_id": "1",
+          "user_id": "32",
+          "sort": "1"
         },
-        {"id": 2,
-        "name": "食",
-        "type": "支出",
+        {
+          "id": "4",
+          "name": "食",
+          "type_id": "1",
+          "user_id": "32",
+          "sort": "2"
         },
-        {"id": 3,
-        "name": "住",
-        "type": "支出",
+        {
+          "id": "6",
+          "name": "住",
+          "type_id": "1",
+          "user_id": "32",
+          "sort": "3"
         },
-    ]
-}
+        {
+          "id": "5",
+          "name": "行",
+          "type_id": "1",
+          "user_id": "32",
+          "sort": "4"
+        }
+      ]
+    },
+    {
+      "type_id": "2",
+      "list": [
+        {
+          "id": "7",
+          "name": "工资",
+          "type_id": "2",
+          "user_id": "32",
+          "sort": "1"
+        },
+        {
+          "id": "8",
+          "name": "奖金",
+          "type_id": "2",
+          "user_id": "32",
+          "sort": "2"
+        },
+        {
+          "id": "10",
+          "name": "报销",
+          "type_id": "2",
+          "user_id": "32",
+          "sort": "3"
+        },
+        {
+          "id": "9",
+          "name": "理财",
+          "type_id": "2",
+          "user_id": "32",
+          "sort": "4"
+        }
+      ]
+    }
+  ]
 ``` 
 
 - **返回结果说明**  
 
 | 名称          |说明       |类型| 备注|
 | :------------ |:----------|:--:|:----|
-| list     |所有用途列表   |数组 ||
-| list.id     |用途id   |数值 ||
-| list.name     |用途名称   |字符串 ||
-| list.type     |账目类型   |字符串 ||
+| list     |所有用途列表   |数组 |每个对象为一个带type_id的数组。|
+| list.type_id     |某一类型的id   |数值 ||
+| list.list     |类型为type_id的用途列表   |数组 ||
+| list.list.id     |用途id   |数值 ||
+| list.list.name     |用途名称   |字符串 ||
+| list.list.type     |账目类型   |字符串 ||
 
 ### 记账
 
@@ -280,7 +334,7 @@
 
 获取账目表。
 
-| **接口**      | addaccount.html |
+| **接口**      | accountlist.html |
 | :------------ |:-----------|
 | **Method**    |post |
 
@@ -303,22 +357,35 @@
 以下只描述data中的返回结果。
 
 ``` json
-{
-	"list": [
-	    {"id": 1,
-	    "type": 1,
-	    "time": 123456,
-	    "desc": "大衣一件",
-	    "moneyMode": 3,
-	    "use": 1},
-	    {"id": 2,
-	    "type": 2,
-	    "time": "2016-05-11",
-	    "desc": "发工资",
-	    "moneyMode": 2,
-	    "use": 1},
-	]
-}
+  "list": [
+    {
+      "id": "2",
+      "desc": "午餐",
+      "type_id": "1",
+      "time": "1462161600",
+      "money_mode": "2",
+      "use_id": "32",
+      "amount": "20.00"
+    },
+    {
+      "id": "1",
+      "desc": "购买衣服",
+      "type_id": "1",
+      "time": "1462086000",
+      "money_mode": "1",
+      "use_id": "32",
+      "amount": "305.00"
+    },
+    {
+      "id": "3",
+      "desc": "房费",
+      "type_id": "1",
+      "time": "1461816000",
+      "money_mode": "1",
+      "use_id": "32",
+      "amount": "5000.00"
+    }
+  ]
 ``` 
 
 - **返回结果说明**  
@@ -327,8 +394,9 @@
 | :------------ |:----------|:--:|:----|
 | list        |账目表。 |数组||
 | list.id     |账目id   |数值 ||
-| list.type     |类型id   |数值 ||
-| list.time     |时间戳(秒)   |数值 ||
 | list.desc     |描述   |字符串 ||
-| list.moneyMode     |消费方式   |数值 ||
-| list.use     |用途id   |数值 ||
+| list.type_id     |类型id   |数值 ||
+| list.time     |时间戳(秒)   |数值 ||
+| list.money_mode     |消费方式   |数值 ||
+| list.use_id     |用途id   |数值 ||
+| list.amount     |金额   |数值 ||
